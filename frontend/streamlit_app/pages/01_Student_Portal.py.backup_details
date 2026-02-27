@@ -1,0 +1,441 @@
+﻿import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
+import time
+import cv2
+from PIL import Image
+import io
+
+# Page config
+st.set_page_config(
+    page_title="Student Portal - Smart Attendance",
+    page_icon="👨‍🎓",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Initialize session state for navigation
+if "nav_selection" not in st.session_state:
+    st.session_state.nav_selection = "Dashboard"
+
+if "camera_active" not in st.session_state:
+    st.session_state.camera_active = False
+
+if "verification_status" not in st.session_state:
+    st.session_state.verification_status = None
+
+if "liveness_score" not in st.session_state:
+    st.session_state.liveness_score = 85
+
+if "attendance_marked" not in st.session_state:
+    st.session_state.attendance_marked = False
+
+if "captured_image" not in st.session_state:
+    st.session_state.captured_image = None
+
+# Custom CSS
+st.markdown("""
+<style>
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .main-header {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0 20px 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin: 10px 0;
+    }
+    .success-badge {
+        background: #d4edda;
+        color: #155724;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .warning-badge {
+        background: #fff3cd;
+        color: #856404;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .info-badge {
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .metric-card-small {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        border-left: 4px solid #667eea;
+    }
+    .metric-value {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #667eea;
+    }
+    .metric-label {
+        font-size: 0.9em;
+        color: #666;
+        text-transform: uppercase;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Sidebar Navigation
+with st.sidebar:
+    st.markdown("### 👨‍🎓 Student Portal")
+    st.markdown("---")
+    
+    nav_options = {
+        "Dashboard": "📊",
+        "Mark Attendance": "📸",
+        "My Attendance": "📋",
+        "Profile": "👤",
+        "Settings": "⚙️"
+    }
+    
+    for option, icon in nav_options.items():
+        if st.button(f"{icon} {option}", key=f"nav_{option}", width='stretch'):
+            st.session_state.nav_selection = option
+            if option != "Mark Attendance":
+                st.session_state.camera_active = False
+    
+    st.markdown("---")
+    
+    st.markdown("### 📊 Quick Stats")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        <div class="metric-card-small">
+            <div class="metric-value">85%</div>
+            <div class="metric-label">Attendance</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div class="metric-card-small">
+            <div class="metric-value">12</div>
+            <div class="metric-label">Classes</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; padding: 10px;">
+        <p style="color: #666; margin: 0;">Salphine Chemos</p>
+        <p style="color: #999; font-size: 0.8em;">S12345 • Computer Science</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Main content area based on navigation
+st.markdown(f"""
+<div class="main-header">
+    <h2 style="color: #667eea; margin: 0;">{st.session_state.nav_selection}</h2>
+</div>
+""", unsafe_allow_html=True)
+
+# DASHBOARD PAGE
+if st.session_state.nav_selection == "Dashboard":
+    st.markdown(f"""
+    <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3>Welcome back, Salphine! 👋</h3>
+        <p>{datetime.now().strftime('%A, %B %d, %Y')}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown("""
+        <div class="card" style="text-align: center;">
+            <h3 style="color: #667eea;">85%</h3>
+            <p>Attendance Rate</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div class="card" style="text-align: center;">
+            <h3 style="color: #667eea;">12</h3>
+            <p>Classes Attended</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown("""
+        <div class="card" style="text-align: center;">
+            <h3 style="color: #667eea;">98%</h3>
+            <p>Verification Rate</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown("""
+        <div class="card" style="text-align: center;">
+            <h3 style="color: #667eea;">4.2</h3>
+            <p>Current GPA</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📅 Today's Schedule")
+    
+    schedule_data = pd.DataFrame({
+        'Time': ['09:00 AM', '11:00 AM', '02:00 PM'],
+        'Course': ['Computer Science 101', 'Data Structures', 'Algorithms'],
+        'Status': ['Completed', 'In Progress', 'Upcoming'],
+        'Room': ['Lab 301', 'Hall A', 'Room 205']
+    })
+    st.dataframe(schedule_data, width='stretch', hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# MARK ATTENDANCE PAGE
+elif st.session_state.nav_selection == "Mark Attendance":
+    col1, col2 = st.columns([3, 2])
+    
+    with col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("### 📸 Camera Feed")
+        
+        if not st.session_state.camera_active:
+            if st.button("🎥 Start Camera", width='stretch'):
+                st.session_state.camera_active = True
+                st.session_state.verification_status = None
+                st.session_state.attendance_marked = False
+                st.rerun()
+        else:
+            img_file = st.camera_input("Take a photo", key="camera_input")
+            
+            if st.button("⏹️ Stop Camera", width='stretch'):
+                st.session_state.camera_active = False
+                st.session_state.verification_status = None
+                st.session_state.attendance_marked = False
+                st.rerun()
+            
+            if img_file is not None:
+                bytes_data = img_file.getvalue()
+                cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+                st.session_state.captured_image = cv2_img
+                
+                if not st.session_state.attendance_marked:
+                    st.session_state.verification_status = "processing"
+                    with st.spinner("Verifying..."):
+                        time.sleep(2)
+                        st.session_state.liveness_score = np.random.randint(75, 98)
+                        st.session_state.attendance_marked = True
+                        st.session_state.verification_status = "success"
+                    st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("### 📊 Verification Status")
+        
+        if st.session_state.verification_status == "processing":
+            st.markdown('<div class="warning-badge" style="text-align: center;">⏳ Processing...</div>', unsafe_allow_html=True)
+        elif st.session_state.verification_status == "success":
+            st.markdown('<div class="success-badge" style="text-align: center;">✅ Verified Successfully</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="margin-top: 15px;">
+                <p><strong>Student:</strong> Salphine Chemos (S12345)</p>
+                <p><strong>Course:</strong> Computer Science 101</p>
+                <p><strong>Time:</strong> {datetime.now().strftime('%H:%M:%S')}</p>
+                <p><strong>Confidence:</strong> {st.session_state.liveness_score}%</p>
+            </div>
+            """, unsafe_allow_html=True)
+        elif st.session_state.verification_status is None:
+            st.markdown('<div class="info-badge" style="text-align: center;">📸 Ready to capture</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="warning-badge" style="text-align: center;">⚠️ Verification Failed</div>', unsafe_allow_html=True)
+        
+        st.markdown("#### 🎯 Liveness Score")
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=st.session_state.liveness_score,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Liveness Score", 'font': {'size': 18}},
+            gauge={
+                'axis': {'range': [0, 100]},
+                'bar': {'color': "#667eea"},
+                'steps': [
+                    {'range': [0, 50], 'color': "#f8d7da"},
+                    {'range': [50, 75], 'color': "#fff3cd"},
+                    {'range': [75, 100], 'color': "#d4edda"}
+                ],
+                'threshold': {
+                    'line': {'color': 'red', 'width': 4},
+                    'thickness': 0.75,
+                    'value': 85
+                }
+            }
+        ))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig, width="stretch")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# MY ATTENDANCE PAGE - FIXED VERSION
+elif st.session_state.nav_selection == "My Attendance":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📋 Attendance History")
+    
+    # Sample attendance data
+    dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
+    attendance_history = pd.DataFrame({
+        'Date': dates.strftime('%Y-%m-%d'),
+        'Course': np.random.choice(['CS101', 'DS202', 'ALGO301', 'DB201'], 30),
+        'Status': np.random.choice(['Present', 'Present', 'Present', 'Absent', 'Late'], 30, p=[0.6, 0.2, 0.1, 0.05, 0.05]),
+        'Time': ['09:00 AM' if i % 3 == 0 else '11:00 AM' if i % 3 == 1 else '02:00 PM' for i in range(30)],
+        'Confidence': [f"{np.random.randint(85, 99)}%" for _ in range(30)]
+    })
+    
+    # Filters
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        course_filter = st.selectbox("Filter by Course", ["All"] + list(attendance_history['Course'].unique()))
+    with col2:
+        month_filter = st.selectbox("Filter by Month", ["All", "January", "February", "March", "April", "May"])
+    with col3:
+        status_filter = st.selectbox("Filter by Status", ["All", "Present", "Absent", "Late"])
+    
+    # Apply filters
+    filtered_data = attendance_history.copy()
+    if course_filter != "All":
+        filtered_data = filtered_data[filtered_data['Course'] == course_filter]
+    if status_filter != "All":
+        filtered_data = filtered_data[filtered_data['Status'] == status_filter]
+    
+    # Summary stats
+    total_classes = len(filtered_data)
+    present = len(filtered_data[filtered_data['Status'] == 'Present'])
+    absent = len(filtered_data[filtered_data['Status'] == 'Absent'])
+    late = len(filtered_data[filtered_data['Status'] == 'Late'])
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Classes", total_classes)
+    with col2:
+        st.metric("Present", present, f"{(present/total_classes*100):.1f}%" if total_classes > 0 else "0%")
+    with col3:
+        st.metric("Absent", absent)
+    with col4:
+        st.metric("Late", late)
+    
+    # FIXED ATTENDANCE CHART - Using proper dataframe
+    st.markdown("#### Attendance Distribution")
+    if len(filtered_data) > 0:
+        # Create a clean dataframe for plotting
+        status_counts = filtered_data['Status'].value_counts().reset_index()
+        status_counts.columns = ['Status', 'Count']
+        
+        # Create the bar chart
+        fig = px.bar(
+            status_counts,
+            x='Status',
+            y='Count',
+            color='Status',
+            color_discrete_map={'Present': '#28a745', 'Absent': '#dc3545', 'Late': '#ffc107'},
+            title="Attendance by Status"
+        )
+        fig.update_layout(showlegend=False, height=350)
+        st.plotly_chart(fig, width="stretch")
+    else:
+        st.info("No data available for the selected filters")
+    
+    # Data table
+    st.dataframe(filtered_data, width='stretch', hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# PROFILE PAGE
+elif st.session_state.nav_selection == "Profile":
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.markdown('<div class="card" style="text-align: center;">', unsafe_allow_html=True)
+        st.markdown("### 👤 Profile Picture")
+        st.image("https://via.placeholder.com/150", width=150)
+        st.markdown("---")
+        st.markdown("**Member since:** Jan 2024")
+        st.markdown("**Last active:** Today")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("### 📋 Personal Information")
+        
+        with st.form("profile_form"):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.text_input("First Name", value="Salphine", disabled=True)
+                st.text_input("Student ID", value="S12345", disabled=True)
+                st.text_input("Department", value="Computer Science", disabled=True)
+            with col_b:
+                st.text_input("Last Name", value="Doe", disabled=True)
+                st.text_input("Email", value="Salphine.doe@students.embu.ac.ke", disabled=True)
+                st.text_input("Year", value="3rd Year", disabled=True)
+            
+            st.markdown("### 🔒 Security Settings")
+            st.checkbox("Enable Two-Factor Authentication", value=True)
+            st.checkbox("Receive Email Notifications", value=True)
+            
+            if st.form_submit_button("Update Settings"):
+                st.success("Settings updated successfully!")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# SETTINGS PAGE
+elif st.session_state.nav_selection == "Settings":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### ⚙️ Application Settings")
+    
+    tabs = st.tabs(["General", "Camera", "Notifications", "Privacy"])
+    
+    with tabs[0]:
+        st.selectbox("Theme", ["Light", "Dark", "System Default"])
+        st.selectbox("Language", ["English", "Swahili", "French"])
+        st.slider("Auto-refresh interval (seconds)", 5, 60, 10)
+    
+    with tabs[1]:
+        st.select_slider("Camera Quality", options=["Low", "Medium", "High", "Ultra"], value="High")
+        st.number_input("Timeout (seconds)", min_value=5, max_value=60, value=15)
+        st.checkbox("Show face detection overlay", value=True)
+        st.checkbox("Enable flash", value=False)
+    
+    with tabs[2]:
+        st.checkbox("Attendance confirmation", value=True)
+        st.checkbox("Daily summary", value=False)
+        st.checkbox("Low attendance alerts", value=True)
+        st.time_input("Quiet hours start", value=datetime.now().replace(hour=22, minute=0))
+    
+    with tabs[3]:
+        st.checkbox("Share anonymous usage data", value=False)
+        st.checkbox("Store face data locally only", value=True)
+        st.info("Your face data is encrypted and stored locally on your device.")
+    
+    if st.button("Save Settings", width='stretch'):
+        st.success("Settings saved successfully!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    '<p style="text-align: center; color: #666;">© 2026 University of Embu - Smart Attendance System</p>',
+    unsafe_allow_html=True
+)
+
+
+

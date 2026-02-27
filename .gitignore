@@ -1,0 +1,7 @@
+
+# Virtual Environment - DO NOT COMMIT
+frontend/venv/
+backend/venv/
+venv/
+*.pyc
+__pycache__/

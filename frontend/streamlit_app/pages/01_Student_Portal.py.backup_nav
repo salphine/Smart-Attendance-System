@@ -1,0 +1,201 @@
+﻿import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
+import time
+import cv2
+from PIL import Image
+import io
+
+# Page config
+st.set_page_config(
+    page_title="Student Portal - Smart Attendance",
+    page_icon="👨‍🎓",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .main-header {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        margin: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin: 10px 0;
+    }
+    .success-text {
+        color: #28a745;
+        font-weight: 600;
+    }
+    .info-text {
+        color: #17a2b8;
+        font-weight: 600;
+    }
+    .warning-text {
+        color: #ffc107;
+        font-weight: 600;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Initialize session state
+if 'camera_active' not in st.session_state:
+    st.session_state.camera_active = False
+
+if 'verification_status' not in st.session_state:
+    st.session_state.verification_status = None
+
+if 'liveness_score' not in st.session_state:
+    st.session_state.liveness_score = 85
+
+if 'attendance_marked' not in st.session_state:
+    st.session_state.attendance_marked = False
+
+if 'captured_image' not in st.session_state:
+    st.session_state.captured_image = None
+
+# Header
+st.markdown("""
+<div class="main-header">
+    <h1 style="color: #667eea; margin: 0;">👨‍🎓 Student Portal</h1>
+    <p style="color: #666;">AI-Powered Face Recognition Attendance with Anti-Spoofing</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Main content
+col1, col2 = st.columns([3, 2])
+
+with col1:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📸 Camera Feed")
+    
+    # Camera input
+    img_file = st.camera_input("Take a photo", key="camera_input", disabled=not st.session_state.camera_active)
+    
+    if img_file is not None:
+        # Convert to image
+        bytes_data = img_file.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        st.session_state.captured_image = cv2_img
+        
+        # Simulate face detection
+        if not st.session_state.attendance_marked:
+            st.session_state.verification_status = "processing"
+            with st.spinner("Processing..."):
+                time.sleep(2)
+                st.session_state.liveness_score = np.random.randint(75, 98)
+                st.session_state.attendance_marked = True
+                st.session_state.verification_status = "success"
+    
+    # Control buttons
+    col_start, col_stop = st.columns(2)
+    with col_start:
+        if st.button("🎥 Start Camera", use_container_width=True):
+            st.session_state.camera_active = True
+            st.session_state.verification_status = None
+            st.session_state.attendance_marked = False
+            st.rerun()
+    
+    with col_stop:
+        if st.button("⏹️ Stop Camera", use_container_width=True):
+            st.session_state.camera_active = False
+            st.session_state.verification_status = None
+            st.session_state.attendance_marked = False
+            st.session_state.captured_image = None
+            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col2:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📊 Verification Status")
+    
+    # Status display
+    if st.session_state.verification_status == "processing":
+        st.info("⏳ Processing...")
+    elif st.session_state.verification_status == "success":
+        st.success("✅ Face Verified - Liveness Confirmed")
+        st.markdown('<p class="success-text">✓ Student: John Doe (S12345)</p>', unsafe_allow_html=True)
+        st.markdown('<p class="info-text">📚 Course: Computer Science 101</p>', unsafe_allow_html=True)
+        st.markdown('<p class="info-text">🕒 Time: ' + datetime.now().strftime('%H:%M:%S') + '</p>', unsafe_allow_html=True)
+    elif st.session_state.verification_status is None:
+        st.warning("⏸️ Camera not started")
+    else:
+        st.error("❌ Verification Failed")
+    
+    # Liveness score gauge
+    st.markdown("#### 🎯 Liveness Score")
+    
+    # Create gauge chart
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=st.session_state.liveness_score,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        title={'text': "Liveness Score", 'font': {'size': 20, 'color': '#667eea'}},
+        gauge={
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#667eea"},
+            'bar': {'color': "#667eea", 'thickness': 0.3},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "#e0e0e0",
+            'steps': [
+                {'range': [0, 50], 'color': "#f8d7da"},
+                {'range': [50, 75], 'color': "#fff3cd"},
+                {'range': [75, 100], 'color': "#d4edda"}
+            ],
+            'threshold': {
+                'line': {'color': 'red', 'width': 4},
+                'thickness': 0.75,
+                'value': 85
+            }
+        }
+    ))
+    
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        font={'color': "#666", 'family': "Arial"},
+        height=250,
+        margin=dict(l=20, r=20, t=50, b=20)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Recent attendance
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown("### 📋 Recent Attendance")
+
+# Sample attendance data
+attendance_data = pd.DataFrame({
+    'Date': [datetime.now().strftime('%Y-%m-%d %H:%M'), 
+             (datetime.now().replace(hour=9, minute=30)).strftime('%Y-%m-%d %H:%M'),
+             (datetime.now().replace(hour=11, minute=15)).strftime('%Y-%m-%d %H:%M')],
+    'Course': ['Computer Science 101', 'Data Structures', 'Algorithms'],
+    'Status': ['Present', 'Present', 'Present'],
+    'Confidence': ['98%', '95%', '97%']
+})
+
+st.dataframe(attendance_data, use_container_width=True, hide_index=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    '<p style="text-align: center; color: #666;">© 2026 University of Embu - Smart Attendance System</p>',
+    unsafe_allow_html=True
+)

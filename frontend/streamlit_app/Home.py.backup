@@ -1,0 +1,580 @@
+﻿import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime, timedelta
+import random
+import time
+from streamlit_autorefresh import st_autorefresh
+
+# Page config
+st.set_page_config(
+    page_title="University of Embu - Smart Attendance System",
+    page_icon="",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    /* Professional Dashboard Styling */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Header */
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .main-header h1 {
+        font-size: 3em;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    
+    .main-header h3 {
+        font-weight: 300;
+        opacity: 0.9;
+    }
+    
+    /* Metric Cards */
+    .metric-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: transform 0.3s;
+        border-bottom: 4px solid;
+        margin: 10px 0;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .metric-label {
+        color: #666;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+    
+    .metric-value {
+        font-size: 2.5em;
+        font-weight: 700;
+        color: #333;
+        margin: 10px 0;
+    }
+    
+    .metric-change {
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    .positive-change {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .negative-change {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    /* Chart Containers */
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin: 10px 0;
+    }
+    
+    .chart-title {
+        font-size: 1.2em;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    /* Live Indicator */
+    .live-badge {
+        background: #dc3545;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    /* Status Cards */
+    .status-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin: 5px 0;
+        border-left: 4px solid;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Feature Cards */
+    .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        height: 100%;
+        cursor: pointer;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+    
+    .feature-icon {
+        font-size: 3em;
+        margin-bottom: 15px;
+    }
+    
+    .feature-title {
+        font-size: 1.5em;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .feature-description {
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 0.95em;
+    }
+    
+    .feature-stats {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 10px;
+        color: #495057;
+        font-size: 0.9em;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Auto-refresh every 10 seconds for real-time updates
+refresh_count = st_autorefresh(interval=10000, key="home_autorefresh")
+
+# Initialize session state for analytics data
+if 'analytics_data' not in st.session_state:
+    st.session_state.analytics_data = {
+        'total_students': 3250,
+        'active_students': 2890,
+        'total_staff': 145,
+        'total_courses': 78,
+        'today_attendance': 0,
+        'avg_attendance': 87.5,
+        'system_uptime': datetime.now(),
+        'verification_success': 98.2,
+        'active_sessions': 0
+    }
+
+if 'attendance_trends' not in st.session_state:
+    # Generate 30 days of attendance data
+    dates = [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(30, 0, -1)]
+    st.session_state.attendance_trends = {
+        'dates': dates,
+        'values': [random.randint(2200, 2900) for _ in range(30)]
+    }
+
+if 'course_performance' not in st.session_state:
+    st.session_state.course_performance = {
+        'courses': ['Computer Science', 'Business', 'Engineering', 'Medicine', 'Education', 'Law'],
+        'attendance': [random.randint(75, 95) for _ in range(6)],
+        'students': [random.randint(200, 500) for _ in range(6)]
+    }
+
+if 'recent_activity' not in st.session_state:
+    st.session_state.recent_activity = []
+
+if 'system_health' not in st.session_state:
+    st.session_state.system_health = {
+        'face_recognition': 99.2,
+        'liveness_detection': 97.8,
+        'anti_spoofing': 99.5,
+        'response_time': 0.245,
+        'active_cameras': 24,
+        'queue_size': 3
+    }
+
+# Update real-time data
+def update_realtime_data():
+    """Update analytics data with realistic variations"""
+    # Update today's attendance (between 2200-2900)
+    st.session_state.analytics_data['today_attendance'] = random.randint(2400, 2800)
+    
+    # Update active sessions
+    st.session_state.analytics_data['active_sessions'] = random.randint(18, 32)
+    
+    # Update verification success rate (small variations)
+    st.session_state.analytics_data['verification_success'] = round(98.2 + random.uniform(-0.8, 0.8), 1)
+    
+    # Add random activity
+    activities = [
+        (" Student verified", "success"),
+        (" Liveness check passed", "info"),
+        (" Face captured", "info"),
+        (" Multiple faces detected", "warning"),
+        (" Attendance marked", "success"),
+        (" New session started", "info")
+    ]
+    
+    if random.random() > 0.3:  # 70% chance to add activity
+        activity_text, activity_type = random.choice(activities)
+        st.session_state.recent_activity.insert(0, {
+            'time': datetime.now().strftime('%H:%M:%S'),
+            'text': activity_text,
+            'type': activity_type
+        })
+        # Keep only last 8 activities
+        st.session_state.recent_activity = st.session_state.recent_activity[:8]
+
+# Call update function
+update_realtime_data()
+
+# Header
+st.markdown(f"""
+<div class="main-header">
+    <span class="live-badge"> LIVE SYSTEM</span>
+    <h1> University of Embu</h1>
+    <h3>Smart Attendance System with AI-Powered Anti-Spoofing</h3>
+    <p style="margin-top: 20px; opacity: 0.9;">{datetime.now().strftime('%A, %B %d, %Y  %H:%M:%S')}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Key Metrics Row
+col1, col2, col3, col4 = st.columns(4)
+
+# Calculate attendance percentage
+attendance_percentage = (st.session_state.analytics_data['today_attendance'] / 
+                        st.session_state.analytics_data['total_students']) * 100
+
+with col1:
+    st.markdown(f"""
+    <div class="metric-card" style="border-bottom-color: #667eea;">
+        <div class="metric-label">TOTAL STUDENTS</div>
+        <div class="metric-value">{st.session_state.analytics_data['total_students']:,}</div>
+        <div class="metric-change positive-change"> 124 this semester</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="metric-card" style="border-bottom-color: #48bb78;">
+        <div class="metric-label">TODAY'S ATTENDANCE</div>
+        <div class="metric-value">{st.session_state.analytics_data['today_attendance']:,}</div>
+        <div class="metric-change {'positive-change' if attendance_percentage > 80 else 'negative-change'}">
+            {attendance_percentage:.1f}% of total
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="metric-card" style="border-bottom-color: #fbbf24;">
+        <div class="metric-label">ACTIVE SESSIONS</div>
+        <div class="metric-value">{st.session_state.analytics_data['active_sessions']}</div>
+        <div class="metric-change positive-change">{st.session_state.analytics_data['total_courses']} total courses</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown(f"""
+    <div class="metric-card" style="border-bottom-color: #f56565;">
+        <div class="metric-label">VERIFICATION RATE</div>
+        <div class="metric-value">{st.session_state.analytics_data['verification_success']}%</div>
+        <div class="metric-change positive-change">99.9% anti-spoofing</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Analytics Charts Row
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-title"> 30-Day Attendance Trend</div>', unsafe_allow_html=True)
+    
+    # Create attendance trend chart
+    fig_trend = go.Figure()
+    
+    fig_trend.add_trace(go.Scatter(
+        x=st.session_state.attendance_trends['dates'][-15:],  # Last 15 days
+        y=st.session_state.attendance_trends['values'][-15:],
+        mode='lines+markers',
+        name='Daily Attendance',
+        line=dict(color='#667eea', width=3),
+        fill='tozeroy',
+        fillcolor='rgba(102, 126, 234, 0.1)'
+    ))
+    
+    # Add average line
+    avg_value = np.mean(st.session_state.attendance_trends['values'])
+    fig_trend.add_hline(
+        y=avg_value,
+        line_dash="dash",
+        line_color="#48bb78",
+        annotation_text=f"Average: {avg_value:.0f}",
+        annotation_position="bottom right"
+    )
+    
+    fig_trend.update_layout(
+        xaxis_title="Date",
+        yaxis_title="Number of Students",
+        hovermode='x unified',
+        showlegend=False,
+        height=350,
+        margin=dict(l=40, r=40, t=20, b=40)
+    )
+    
+    st.plotly_chart(fig_trend, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col2:
+    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-title"> Course Performance</div>', unsafe_allow_html=True)
+    
+    # Create course performance chart
+    fig_courses = go.Figure()
+    
+    fig_courses.add_trace(go.Bar(
+        x=st.session_state.course_performance['courses'],
+        y=st.session_state.course_performance['attendance'],
+        name='Attendance %',
+        marker_color='#667eea',
+        text=[f"{v}%" for v in st.session_state.course_performance['attendance']],
+        textposition='outside',
+        yaxis='y'
+    ))
+    
+    fig_courses.add_trace(go.Scatter(
+        x=st.session_state.course_performance['courses'],
+        y=st.session_state.course_performance['students'],
+        name='Students',
+        mode='lines+markers',
+        line=dict(color='#48bb78', width=3),
+        yaxis='y2'
+    ))
+    
+    fig_courses.update_layout(
+        xaxis_title="Course",
+        yaxis=dict(title="Attendance %", range=[0, 100]),
+        yaxis2=dict(title="Number of Students", overlaying='y', side='right'),
+        hovermode='x unified',
+        height=350,
+        margin=dict(l=40, r=40, t=20, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    st.plotly_chart(fig_courses, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# System Health and Live Activity
+col1, col2 = st.columns([3, 2])
+
+with col1:
+    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-title"> System Health Metrics</div>', unsafe_allow_html=True)
+    
+    # Create health metrics columns
+    health_cols = st.columns(3)
+    
+    metrics = [
+        ("Face Recognition", st.session_state.system_health['face_recognition'], "success"),
+        ("Liveness Detection", st.session_state.system_health['liveness_detection'], "warning"),
+        ("Anti-Spoofing", st.session_state.system_health['anti_spoofing'], "success"),
+        ("Response Time", f"{st.session_state.system_health['response_time']*1000:.0f}ms", "info"),
+        ("Active Cameras", st.session_state.system_health['active_cameras'], "info"),
+        ("Queue Size", st.session_state.system_health['queue_size'], "warning")
+    ]
+    
+    for i, (label, value, status) in enumerate(metrics):
+        with health_cols[i % 3]:
+            if status == "success":
+                bg_color = "#d4edda"
+                color = "#155724"
+            elif status == "warning":
+                bg_color = "#fff3cd"
+                color = "#856404"
+            else:
+                bg_color = "#d1ecf1"
+                color = "#0c5460"
+            
+            st.markdown(f"""
+            <div style="
+                background: {bg_color};
+                padding: 15px;
+                border-radius: 10px;
+                text-align: center;
+                margin: 5px 0;
+            ">
+                <div style="font-size: 0.9em; color: {color};">{label}</div>
+                <div style="font-size: 1.8em; font-weight: 700; color: {color};">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col2:
+    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-title"> Live Activity Feed</div>', unsafe_allow_html=True)
+    
+    if st.session_state.recent_activity:
+        for activity in st.session_state.recent_activity:
+            if activity['type'] == 'success':
+                bg_color = "#d4edda"
+                border_color = "#28a745"
+                color = "#155724"
+            elif activity['type'] == 'warning':
+                bg_color = "#fff3cd"
+                border_color = "#ffc107"
+                color = "#856404"
+            else:
+                bg_color = "#d1ecf1"
+                border_color = "#17a2b8"
+                color = "#0c5460"
+            
+            st.markdown(f"""
+            <div style="
+                background: {bg_color};
+                border-left: 4px solid {border_color};
+                padding: 10px 15px;
+                margin: 5px 0;
+                border-radius: 5px;
+                color: {color};
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <span>{activity['text']}</span>
+                <span style="font-size: 0.85em; opacity: 0.8;">{activity['time']}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("No recent activity")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Access Platforms Section
+st.markdown("---")
+st.markdown("###  Access Platforms")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon"></div>
+        <div class="feature-title">Student Portal</div>
+        <div class="feature-description">
+            Mark attendance with advanced face recognition and anti-spoofing
+        </div>
+        <div class="feature-stats">
+            <span> 2,345 active now</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Enter Student Portal", key="student_btn", use_container_width=True):
+        st.switch_page("pages/01_Advanced_Student_Portal.py")
+
+with col2:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon"></div>
+        <div class="feature-title">Lecturer Portal</div>
+        <div class="feature-description">
+            Real-time monitoring, analytics, and student management
+        </div>
+        <div class="feature-stats">
+            <span> 78 lecturers online</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Enter Lecturer Portal", key="lecturer_btn", use_container_width=True):
+        st.switch_page("pages/02_Advanced_Lecturer_Portal.py")
+
+with col3:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon"></div>
+        <div class="feature-title">Analytics Center</div>
+        <div class="feature-description">
+            Comprehensive reports, trends, and predictive analytics
+        </div>
+        <div class="feature-stats">
+            <span> Updated real-time</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("View Analytics", key="analytics_btn", use_container_width=True):
+        st.info("Analytics Center coming soon!")
+
+# Footer
+st.markdown("---")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(f"""
+    <div style="color: white; opacity: 0.8;">
+         Auto-refresh: {refresh_count} updates
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div style="color: white; opacity: 0.8; text-align: center;">
+         2026 University of Embu - Smart Attendance System
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    uptime = datetime.now() - st.session_state.analytics_data['system_uptime']
+    hours = uptime.total_seconds() / 3600
+    st.markdown(f"""
+    <div style="color: white; opacity: 0.8; text-align: right;">
+         System uptime: {hours:.1f} hours
+    </div>
+    """, unsafe_allow_html=True)
