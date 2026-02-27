@@ -435,7 +435,7 @@ else:
             yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
         )
         
-        st.plotly_chart(fig_trend, width='stretch')
+        st.plotly_chart(fig_trend)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
@@ -479,7 +479,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🎓 Enter Student Portal", key="student_btn", width='stretch'):
+        if st.button("🎓 Enter Student Portal", key="student_btn"):
             go_to("student")
 
     with col2:
@@ -493,7 +493,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("📚 Enter Lecturer Portal", key="lecturer_btn", width='stretch'):
+        if st.button("📚 Enter Lecturer Portal", key="lecturer_btn"):
             go_to("lecturer")
 
     # Footer with auto-refresh info
@@ -526,5 +526,6 @@ else:
     # Auto-refresh every 5 seconds using a small trick
     if st.button("🔄 Refresh Data", key="refresh_btn"):
         st.rerun()
+
 
 
