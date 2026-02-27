@@ -10,5 +10,8 @@ sys.path.insert(0, frontend_path)
 # Change to the frontend directory
 os.chdir(frontend_path)
 
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(frontend_path))
+
 # Import and run Home.py directly
 import Home
