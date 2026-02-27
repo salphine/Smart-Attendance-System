@@ -283,7 +283,7 @@ elif st.session_state.nav_selection == "Mark Attendance":
             }
         ))
         fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, )
         
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -351,7 +351,7 @@ elif st.session_state.nav_selection == "My Attendance":
             title="Attendance by Status"
         )
         fig.update_layout(showlegend=False, height=350)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, )
     else:
         st.info("No data available for the selected filters")
     
@@ -436,6 +436,7 @@ st.markdown(
     '<p style="text-align: center; color: #666;">© 2026 University of Embu - Smart Attendance System</p>',
     unsafe_allow_html=True
 )
+
 
 
 
