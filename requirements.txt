@@ -1,30 +1,12 @@
-﻿# Pin ALL dependencies to versions compatible with streamlit 1.28.1
-streamlit==1.28.1
-rich==13.7.1
-markdown-it-py==3.0.0
-pygments==2.16.1
-mdurl==0.1.2
+﻿# Upgrade streamlit to version compatible with rich 14
+streamlit==1.42.0
+rich>=14.0.0
+markdown-it-py>=4.0.0
 
 # Your app dependencies
-plotly==5.17.0
-pandas==2.0.3
+plotly==5.18.0
+pandas==2.1.3
 numpy==1.24.3
 opencv-python-headless==4.8.1.78
 pillow==10.1.0
 streamlit-autorefresh==1.0.1
-
-# Additional dependencies that streamlit needs
-blinker==1.7.0
-cachetools==5.3.2
-click==8.1.7
-gitpython==3.1.41
-packaging==23.2
-protobuf==4.25.3
-pyarrow==14.0.2
-pytz==2023.3
-pyyaml==6.0.1
-requests==2.31.0
-tenacity==8.2.3
-toml==0.10.2
-typing-extensions==4.9.0
-tzdata==2023.4
