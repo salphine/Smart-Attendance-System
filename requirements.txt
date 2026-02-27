@@ -1,7 +1,9 @@
-﻿# Upgrade streamlit to version compatible with rich 14
+﻿# Upgrade streamlit to latest stable
 streamlit==1.42.0
-rich>=14.0.0
-markdown-it-py>=4.0.0
+rich==14.3.3
+markdown-it-py==4.0.0
+pygments==2.19.2
+mdurl==0.1.2
 
 # Your app dependencies
 plotly==5.18.0
