@@ -1,18 +1,37 @@
-
-# Virtual Environment - DO NOT COMMIT
+﻿# Python virtual environment
+venv/
 frontend/venv/
 backend/venv/
-venv/
-*.pyc
-__pycache__/
+*.venv
 
-# Virtual Environment
-frontend/venv/
+# Python cache
 __pycache__/
-*.pyc
-*.backup*
+*.py[cod]
+*.so
+.Python
 
-# Backup files - DO NOT COMMIT
+# Backup files
 *.backup
 *.backup*
-*.py.backup*
+*.bak
+*~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+.env
+*.db
+*.sqlite
+logs/
+temp/
+dist/
+build/
+*.egg-info/
