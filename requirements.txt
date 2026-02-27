@@ -5,6 +5,4 @@ pandas==2.0.3
 plotly==5.17.0
 opencv-python-headless==4.8.1.78
 pillow==10.1.0
-
-# These are needed by streamlit but we'll let it handle them
-# No need to specify rich, markdown-it-py, etc.
+streamlit-autorefresh==1.0.1
