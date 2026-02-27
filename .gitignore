@@ -35,3 +35,6 @@ temp/
 dist/
 build/
 *.egg-info/
+
+# Backend (optional)
+backend/
