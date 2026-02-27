@@ -5,3 +5,14 @@ backend/venv/
 venv/
 *.pyc
 __pycache__/
+
+# Virtual Environment
+frontend/venv/
+__pycache__/
+*.pyc
+*.backup*
+
+# Backup files - DO NOT COMMIT
+*.backup
+*.backup*
+*.py.backup*
