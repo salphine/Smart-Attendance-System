@@ -281,7 +281,7 @@ if not st.session_state.lecturer_logged_in:
             with col2:
                 st.markdown("<br>", unsafe_allow_html=True)
             
-            submitted = st.form_submit_button("Login to Dashboard", width='stretch')
+            submitted = st.form_submit_button("Login to Dashboard")
             
             if submitted:
                 if staff_id and password:
@@ -358,7 +358,7 @@ else:
         
         st.markdown("---")
         
-        if st.button(" Logout", width='stretch'):
+        if st.button(" Logout"):
             st.session_state.lecturer_logged_in = False
             st.rerun()
     
@@ -438,7 +438,7 @@ else:
                 yaxis_title="Students Present",
                 showlegend=False
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig)
             st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
@@ -457,7 +457,7 @@ else:
                 )
             ])
             fig.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20))
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig)
             st.markdown('</div>', unsafe_allow_html=True)
         
         # Live Attendance Feed
@@ -570,7 +570,6 @@ else:
                 df = pd.DataFrame(filtered_students)
                 st.dataframe(
                     df[['id', 'name', 'attendance_percentage', 'status', 'last_attendance', 'face_registered']],
-                    width='stretch',
                     hide_index=True,
                     column_config={
                         'attendance_percentage': st.column_config.ProgressColumn(
@@ -614,16 +613,16 @@ else:
             # Controls
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                if st.button(" Start Session", width='stretch'):
+                if st.button(" Start Session"):
                     st.success("Session started!")
             with col2:
-                if st.button(" Pause", width='stretch'):
+                if st.button(" Pause"):
                     st.warning("Session paused")
             with col3:
-                if st.button(" End", width='stretch'):
+                if st.button(" End"):
                     st.info("Session ended")
             with col4:
-                if st.button(" Refresh", width='stretch'):
+                if st.button(" Refresh"):
                     st.rerun()
             
             # Student grid
@@ -683,7 +682,7 @@ else:
                 ))
             
             fig.update_layout(height=400, hovermode='x unified')
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig)
             st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
@@ -701,7 +700,7 @@ else:
                 yaxis_title="Attendance %",
                 yaxis_range=[0, 100]
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig)
             st.markdown('</div>', unsafe_allow_html=True)
         
         # At-risk analysis
@@ -718,7 +717,7 @@ else:
             })
         
         df_risk = pd.DataFrame(risk_data)
-        st.dataframe(df_risk, width='stretch', hide_index=True)
+        st.dataframe(df_risk, hide_index=True)
     
     elif st.session_state.current_tab == "Settings":
         st.markdown("###  Settings")
@@ -737,7 +736,7 @@ else:
                 new = st.text_input("New Password", type="password")
                 confirm = st.text_input("Confirm Password", type="password")
                 
-                if st.form_submit_button("Update Profile", width='stretch'):
+                if st.form_submit_button("Update Profile"):
                     st.success("Profile updated successfully!")
         
         with col2:
@@ -759,8 +758,9 @@ else:
             duration = st.slider("Default Session Duration (minutes)", 30, 180, 60)
             auto_end = st.checkbox("Auto-end sessions", value=True)
             
-            if st.button("Save Settings", width='stretch'):
+            if st.button("Save Settings"):
                 st.success("Settings saved!")
+
 
 
 

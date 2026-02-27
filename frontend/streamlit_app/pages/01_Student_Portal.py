@@ -111,7 +111,7 @@ with st.sidebar:
     }
     
     for option, icon in nav_options.items():
-        if st.button(f"{icon} {option}", key=f"nav_{option}", width='stretch'):
+        if st.button(f"{icon} {option}", key=f"nav_{option}"):
             st.session_state.nav_selection = option
             if option != "Mark Attendance":
                 st.session_state.camera_active = False
@@ -198,7 +198,7 @@ if st.session_state.nav_selection == "Dashboard":
         'Status': ['Completed', 'In Progress', 'Upcoming'],
         'Room': ['Lab 301', 'Hall A', 'Room 205']
     })
-    st.dataframe(schedule_data, width='stretch', hide_index=True)
+    st.dataframe(schedule_data, hide_index=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # MARK ATTENDANCE PAGE
@@ -210,7 +210,7 @@ elif st.session_state.nav_selection == "Mark Attendance":
         st.markdown("### 📸 Camera Feed")
         
         if not st.session_state.camera_active:
-            if st.button("🎥 Start Camera", width='stretch'):
+            if st.button("🎥 Start Camera"):
                 st.session_state.camera_active = True
                 st.session_state.verification_status = None
                 st.session_state.attendance_marked = False
@@ -218,7 +218,7 @@ elif st.session_state.nav_selection == "Mark Attendance":
         else:
             img_file = st.camera_input("Take a photo", key="camera_input")
             
-            if st.button("⏹️ Stop Camera", width='stretch'):
+            if st.button("⏹️ Stop Camera"):
                 st.session_state.camera_active = False
                 st.session_state.verification_status = None
                 st.session_state.attendance_marked = False
@@ -356,7 +356,7 @@ elif st.session_state.nav_selection == "My Attendance":
         st.info("No data available for the selected filters")
     
     # Data table
-    st.dataframe(filtered_data, width='stretch', hide_index=True)
+    st.dataframe(filtered_data, hide_index=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # PROFILE PAGE
@@ -425,7 +425,7 @@ elif st.session_state.nav_selection == "Settings":
         st.checkbox("Store face data locally only", value=True)
         st.info("Your face data is encrypted and stored locally on your device.")
     
-    if st.button("Save Settings", width='stretch'):
+    if st.button("Save Settings"):
         st.success("Settings saved successfully!")
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -436,6 +436,7 @@ st.markdown(
     '<p style="text-align: center; color: #666;">© 2026 University of Embu - Smart Attendance System</p>',
     unsafe_allow_html=True
 )
+
 
 
 
